@@ -28,6 +28,7 @@ The url query options are as follows:
   </tbody>
 </table>
 
+Note that if no page is specified the default is 1
 Here is an example call:
 ```
 http://youtube-scrape.herokuapp.com/api/search?q=herman%20fassett&page=1
