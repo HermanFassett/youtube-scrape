@@ -1,6 +1,8 @@
-#YouTube Scrape
+# YouTube Scrape
+
 A YouTube search scraping API
-##Get search results
+
+## Get search results
 The base url to get search results, is as follows:<br>
 ```
 http://youtube-scrape.herokuapp.com/api/search
