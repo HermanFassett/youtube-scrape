@@ -8,7 +8,7 @@
         "express": "latest",
         "axios": "latest",
         "cheerio": "latest"
-    }
+    },
     "repository" : {
         "type" : "git",
         "url" : "https://github.com/parthpower/youtube-scrape"
