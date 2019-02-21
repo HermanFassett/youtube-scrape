@@ -32,7 +32,7 @@ app.get('/api/search', function(req, res){
                 var snippet = $(vid).children().last().children().eq(3).text();
                 var upload_date = $(vid).children().last().children().eq(2).children().first().children().first().text();
                 var views = $(vid).children().last().children().eq(2).children().first().children().last().text().split(" ")[0];
-                var thumbnail = "http:" + $(vid).children().first().children().first().children().first().children().first().children().first().attr("src");
+                var thumbnail = $(vid).children().first().children().first().children().first().children().first().children().first().attr("src");
                 var video = {
                     "title": title,
                     "url": url,
