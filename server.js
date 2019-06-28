@@ -7,7 +7,8 @@ var app = express();
 //Home page
 app.get('/', function(req, res) {
     res.sendFile(__dirname + "/index.html");
-})
+});
+
 //API route
 app.get('/api/search', function(req, res){
     // Specify YouTube search url
