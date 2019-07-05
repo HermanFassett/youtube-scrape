@@ -19,6 +19,7 @@ async function youtube(query, page) {
                     let $metainfo = $(vid).find(".yt-lockup-meta-info li");
                     let $thumbnail = $(vid).find(".yt-thumb img");
                     let video = {
+                        "id": $(vid).parent().data("context-item-id"),
                         "title": $(vid).find(".yt-lockup-title").children().first().text(),
                         "url": `https://www.youtube.com${$(vid).find(".yt-lockup-title").children().first().attr("href")}`,
                         "duration": $(vid).find(".video-time").text().trim() || "Playlist",
