@@ -4,7 +4,7 @@ const request = require('request');
 async function youtube(query, page) {
     return new Promise((resolve, reject) => {
         // Specify YouTube search url
-        let url = `https://www.youtube.com/results?q=${query}${page ? `&page=${page}` : ''}`;
+        let url = `https://www.youtube.com/results?q=${encodeURIComponent(query)}${page ? `&page=${page}` : ''}`;
 
         // Access YouTube search
         request(url, (error, response, html) => {
@@ -26,7 +26,7 @@ async function youtube(query, page) {
                         "snippet": $(vid).find(".yt-lockup-description").text(),
                         "upload_date": $metainfo.first().text(),
                         "thumbnail_src": $thumbnail.data("thumb") || $thumbnail.attr("src"),
-                        "views": $metainfo.first().text()
+                        "views": $metainfo.last().text()
                     }
     
                     // Get user details
