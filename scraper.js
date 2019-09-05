@@ -26,7 +26,7 @@ async function youtube(query, page) {
                         "snippet": $(vid).find(".yt-lockup-description").text(),
                         "upload_date": $metainfo.first().text(),
                         "thumbnail_src": $thumbnail.data("thumb") || $thumbnail.attr("src"),
-                        "views": $metainfo.first().text()
+                        "views": $metainfo.last().text()
                     }
     
                     // Get user details
