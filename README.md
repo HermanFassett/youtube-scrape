@@ -346,4 +346,4 @@ Example output:
 ```
 Deploy To Heroku
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/HermanFassett/youtube-scrape)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/unofficial-skills/youtube-scrape)
