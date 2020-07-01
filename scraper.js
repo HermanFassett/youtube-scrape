@@ -11,41 +11,135 @@ async function youtube(query, page) {
             // Check for errors
             if (!error && response.statusCode === 200) {
                 const $ = cheerio.load(html);
-                            
                 let json = { results: [] };
-    
+
+                // First attempt to parse old youtube search result style
                 $(".yt-lockup-dismissable").each((index, vid) => {
-                    // Get video details
-                    let $metainfo = $(vid).find(".yt-lockup-meta-info li");
-                    let $thumbnail = $(vid).find(".yt-thumb img");
-                    let video = {
-                        "id": $(vid).parent().data("context-item-id"),
-                        "title": $(vid).find(".yt-lockup-title").children().first().text(),
-                        "url": `https://www.youtube.com${$(vid).find(".yt-lockup-title").children().first().attr("href")}`,
-                        "duration": $(vid).find(".video-time").text().trim() || "Playlist",
-                        "snippet": $(vid).find(".yt-lockup-description").text(),
-                        "upload_date": $metainfo.first().text(),
-                        "thumbnail_src": $thumbnail.data("thumb") || $thumbnail.attr("src"),
-                        "views": $metainfo.last().text()
-                    }
-    
-                    // Get user details
-                    let $byline = $(vid).find(".yt-lockup-byline");
-                    let uploader = {
-                        "username": $byline.text(),
-                        "url": `https://www.youtube.com${$byline.find("a").attr("href")}`,
-                        "verified": !!$byline.find("[title=Verified]").length
-                    }
-    
-                    // Send results
-                    json.results.push({ video: video, uploader: uploader });
+                    json["version"] = "html_format";
+                    json.results.push(parseOldFormat($, vid));
                 });
+
+                // If that fails, we have to parse new format from json data in html script tag
+                if (!json.results.length) {
+                    json["version"] = "json_format";
+
+                    // Get script json data from html to parse
+                    let data = $.html();
+                    data = data.substring(data.indexOf("ytInitialData") + 17);
+                    data = data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6);
+                    let contents = JSON.parse(data).contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents;
+                    
+                    // Loop through all objects and parse data according to type
+                    contents.forEach(content => {
+                        if (content.hasOwnProperty("videoRenderer")) {
+                            json.results.push(parseVideoRenderer(content.videoRenderer));
+                        }
+                        if (content.hasOwnProperty("radioRenderer")) {
+                            json.results.push(parseRadioRenderer(content.radioRenderer));
+                        }
+                        if (content.hasOwnProperty("playlistRenderer")) {
+                            json.results.push(parsePlaylistRenderer(content.playlistRenderer));
+                        }
+                    });
+                }
     
                 return resolve(json);
             }
             resolve({ error: error });
         });
     });
+}
+
+/**
+ * Parse youtube search results from dom elements
+ * @param {CheerioStatic} $ - The youtube search results loaded with cheerio
+ * @param {CheerioElement} vid - The current video being parsed
+ * @returns object with data to return for this video
+ */
+function parseOldFormat($, vid) {
+    // Get video details
+    let $metainfo = $(vid).find(".yt-lockup-meta-info li");
+    let $thumbnail = $(vid).find(".yt-thumb img");
+    let video = {
+        "id": $(vid).parent().data("context-item-id"),
+        "title": $(vid).find(".yt-lockup-title").children().first().text(),
+        "url": `https://www.youtube.com${$(vid).find(".yt-lockup-title").children().first().attr("href")}`,
+        "duration": $(vid).find(".video-time").text().trim() || "Playlist",
+        "snippet": $(vid).find(".yt-lockup-description").text(),
+        "upload_date": $metainfo.first().text(),
+        "thumbnail_src": $thumbnail.data("thumb") || $thumbnail.attr("src"),
+        "views": $metainfo.last().text()
+    };
+
+    // Get user details
+    let $byline = $(vid).find(".yt-lockup-byline");
+    let uploader = {
+        "username": $byline.text(),
+        "url": `https://www.youtube.com${$byline.find("a").attr("href")}`,
+        "verified": !!$byline.find("[title=Verified]").length
+    };
+
+    // Return json
+    return { video: video, uploader: uploader };
+}
+
+/**
+ * Parse a playlistRenderer object from youtube search results
+ * @param {object} renderer - The playlist renderer
+ * @returns object with data to return for this video
+ */
+function parsePlaylistRenderer(renderer) {
+    // TODO
+}
+
+/**
+ * Parse a radioRenderer object from youtube search results
+ * @param {object} renderer - The radio renderer
+ * @returns object with data to return for this video
+ */
+function parseRadioRenderer(renderer) {
+    // TODO
+}
+
+/**
+ * Parse a videoRenderer object from youtube search results
+ * @param {object} renderer - The video renderer
+ * @returns object with data to return for this video
+ */
+function parseVideoRenderer(renderer) {
+    let video = {
+        "id": renderer.videoId,
+        "title": renderer.title.runs.reduce(comb, ""),
+        "url": `https://www.youtube.com${renderer.navigationEndpoint.commandMetadata.webCommandMetadata.url}`,
+        "duration": renderer.lengthText ? renderer.lengthText.simpleText :
+                    renderer.viewCountText ? renderer.viewCountText.runs.reduce(comb, "") :
+                    "Unknown",
+        "snippet": renderer.descriptionSnippet.runs.reduce((a, b) => a + (b.bold ? `<b>${b.text}</b>` : b.text), ""),
+        "upload_date": renderer.publishedTimeText ? renderer.publishedTimeText.simpleText : "Live",
+        "thumbnail_src": renderer.thumbnail.thumbnails[renderer.thumbnail.thumbnails.length - 1].url,
+        "views": renderer.viewCountText.simpleText || renderer.viewCountText.runs.reduce(comb, "")
+    };
+
+    let uploader = {
+        "username": renderer.ownerText.runs[0].text,
+        "url": `https://www.youtube.com${renderer.ownerText.runs[0].navigationEndpoint.commandMetadata.webCommandMetadata.url}`
+    };
+    uploader.verified = renderer.ownerBadges &&
+        renderer.ownerBadges.some(badge => badge.metadataBadgeRenderer.tooltip === "Verified") || 
+        false;
+
+    return { video: video, uploader: uploader };
+}
+
+/**
+ * Combine array containing objects in format { text: "string" } to a single string
+ * For use with reduce function
+ * @param {string} a - Previous value
+ * @param {object} b - Current object
+ * @returns Previous value concatenated with new object text
+ */
+function comb(a, b) {
+    return a + b.text;
 }
 
 module.exports.youtube = youtube;
