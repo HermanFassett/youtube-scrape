@@ -11,17 +11,17 @@ async function youtube(query, page) {
             // Check for errors
             if (!error && response.statusCode === 200) {
                 const $ = cheerio.load(html);
-                let json = { results: [] };
+                let json = { results: [], version: require('./package.json').version };
 
                 // First attempt to parse old youtube search result style
                 $(".yt-lockup-dismissable").each((index, vid) => {
-                    json["version"] = "html_format";
+                    json["parser"] = "html_format";
                     json.results.push(parseOldFormat($, vid));
                 });
 
                 // If that fails, we have to parse new format from json data in html script tag
                 if (!json.results.length) {
-                    json["version"] = "json_format";
+                    json["parser"] = "json_format";
 
                     // Get script json data from html to parse
                     let data = $.html();
@@ -89,7 +89,21 @@ function parseOldFormat($, vid) {
  * @returns object with data to return for this video
  */
 function parsePlaylistRenderer(renderer) {
-    // TODO
+    let thumbnails = renderer.thumbnailRenderer.playlistVideoThumbnailRenderer.thumbnail.thumbnails;
+    let playlist = {
+        "id": renderer.playlistId,
+        "title": renderer.title.simpleText,
+        "url": `https://www.youtube.com${renderer.navigationEndpoint.commandMetadata.webCommandMetadata.url}`,
+        "thumbnail_src": thumbnails[thumbnails.length - 1].url,
+        "videoCount": renderer.videoCount
+    };
+
+    let uploader = {
+        "username": renderer.shortBylineText.runs[0].text,
+        "url": `https://www.youtube.com${renderer.shortBylineText.runs[0].navigationEndpoint.commandMetadata.webCommandMetadata.url}`
+    };
+
+    return { playlist: playlist, uploader: uploader };
 }
 
 /**
