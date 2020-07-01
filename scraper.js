@@ -31,6 +31,9 @@ async function youtube(query, page) {
                     
                     // Loop through all objects and parse data according to type
                     contents.forEach(content => {
+                        if (content.hasOwnProperty("channelRenderer")) {
+                            json.results.push(parseChannelRenderer(content.channelRenderer));
+                        }
                         if (content.hasOwnProperty("videoRenderer")) {
                             json.results.push(parseVideoRenderer(content.videoRenderer));
                         }
@@ -84,9 +87,28 @@ function parseOldFormat($, vid) {
 }
 
 /**
+ * Parse a channelRenderer object from youtube search results
+ * @param {object} renderer - The channel renderer
+ * @returns object with data to return for this channel
+ */
+function parseChannelRenderer(renderer) {
+    let channel = {
+        "id": renderer.channelId,
+        "title": renderer.title.simpleText,
+        "url": `https://www.youtube.com${renderer.navigationEndpoint.commandMetadata.webCommandMetadata.url}`,
+        "snippet": renderer.descriptionSnippet ? renderer.descriptionSnippet.runs.reduce(comb, "") : "",
+        "thumbnail_src": renderer.thumbnail.thumbnails[renderer.thumbnail.thumbnails.length - 1].url,
+        "video_count": renderer.videoCountText ? renderer.videoCountText.runs.reduce(comb, "") : "",
+        "subscriber_count": renderer.subscriberCountText.simpleText
+    };
+
+    return { channel };
+}
+
+/**
  * Parse a playlistRenderer object from youtube search results
  * @param {object} renderer - The playlist renderer
- * @returns object with data to return for this video
+ * @returns object with data to return for this playlist
  */
 function parsePlaylistRenderer(renderer) {
     let thumbnails = renderer.thumbnailRenderer.playlistVideoThumbnailRenderer.thumbnail.thumbnails;
@@ -109,7 +131,7 @@ function parsePlaylistRenderer(renderer) {
 /**
  * Parse a radioRenderer object from youtube search results
  * @param {object} renderer - The radio renderer
- * @returns object with data to return for this video
+ * @returns object with data to return for this mix
  */
 function parseRadioRenderer(renderer) {
     let radio = {
