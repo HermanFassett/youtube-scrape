@@ -140,7 +140,9 @@ function parseVideoRenderer(renderer) {
         "duration": renderer.lengthText ? renderer.lengthText.simpleText :
                     renderer.viewCountText ? renderer.viewCountText.runs.reduce(comb, "") :
                     "Unknown",
-        "snippet": renderer.descriptionSnippet.runs.reduce((a, b) => a + (b.bold ? `<b>${b.text}</b>` : b.text), ""),
+        "snippet": renderer.descriptionSnippet ?
+                   renderer.descriptionSnippet.runs.reduce((a, b) => a + (b.bold ? `<b>${b.text}</b>` : b.text), ""):
+                   "",
         "upload_date": renderer.publishedTimeText ? renderer.publishedTimeText.simpleText : "Live",
         "thumbnail_src": renderer.thumbnail.thumbnails[renderer.thumbnail.thumbnails.length - 1].url,
         "views": renderer.viewCountText.simpleText || renderer.viewCountText.runs.reduce(comb, "")
