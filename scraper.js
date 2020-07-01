@@ -95,7 +95,7 @@ function parsePlaylistRenderer(renderer) {
         "title": renderer.title.simpleText,
         "url": `https://www.youtube.com${renderer.navigationEndpoint.commandMetadata.webCommandMetadata.url}`,
         "thumbnail_src": thumbnails[thumbnails.length - 1].url,
-        "videoCount": renderer.videoCount
+        "video_count": renderer.videoCount
     };
 
     let uploader = {
@@ -112,7 +112,19 @@ function parsePlaylistRenderer(renderer) {
  * @returns object with data to return for this video
  */
 function parseRadioRenderer(renderer) {
-    // TODO
+    let radio = {
+        "id": renderer.playlistId,
+        "title": renderer.title.simpleText,
+        "url": `https://www.youtube.com${renderer.navigationEndpoint.commandMetadata.webCommandMetadata.url}`,
+        "thumbnail_src": renderer.thumbnail.thumbnails[renderer.thumbnail.thumbnails.length - 1].url,
+        "video_count": renderer.videoCountText.runs.reduce(comb, "")
+    };
+
+    let uploader = {
+        "username": renderer.shortBylineText.simpleText
+    };
+
+    return { radio: radio, uploader: uploader };
 }
 
 /**
