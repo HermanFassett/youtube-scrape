@@ -24,25 +24,32 @@ async function youtube(query, page) {
                     json["parser"] = "json_format";
 
                     // Get script json data from html to parse
-                    let data = $.html();
-                    data = data.substring(data.indexOf("ytInitialData") + 17);
+                    let data = html.substring(html.indexOf("ytInitialData") + 17);
                     data = data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6);
-                    let contents = JSON.parse(data).contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents;
-                    
+                    let sectionLists = JSON.parse(data).contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
+
                     // Loop through all objects and parse data according to type
-                    contents.forEach(content => {
-                        if (content.hasOwnProperty("channelRenderer")) {
-                            json.results.push(parseChannelRenderer(content.channelRenderer));
-                        }
-                        if (content.hasOwnProperty("videoRenderer")) {
-                            json.results.push(parseVideoRenderer(content.videoRenderer));
-                        }
-                        if (content.hasOwnProperty("radioRenderer")) {
-                            json.results.push(parseRadioRenderer(content.radioRenderer));
-                        }
-                        if (content.hasOwnProperty("playlistRenderer")) {
-                            json.results.push(parsePlaylistRenderer(content.playlistRenderer));
-                        }
+                    sectionLists.forEach(sectionList => {
+                        sectionList.itemSectionRenderer.contents.forEach(content => {
+                            try {
+                                if (content.hasOwnProperty("channelRenderer")) {
+                                    json.results.push(parseChannelRenderer(content.channelRenderer));
+                                }
+                                if (content.hasOwnProperty("videoRenderer")) {
+                                    json.results.push(parseVideoRenderer(content.videoRenderer));
+                                }
+                                if (content.hasOwnProperty("radioRenderer")) {
+                                    json.results.push(parseRadioRenderer(content.radioRenderer));
+                                }
+                                if (content.hasOwnProperty("playlistRenderer")) {
+                                    json.results.push(parsePlaylistRenderer(content.playlistRenderer));
+                                }
+                            }
+                            catch(ex) {
+                                console.log(ex);
+                                console.log(content);
+                            }
+                        });
                     });
                 }
     
@@ -99,7 +106,10 @@ function parseChannelRenderer(renderer) {
         "snippet": renderer.descriptionSnippet ? renderer.descriptionSnippet.runs.reduce(comb, "") : "",
         "thumbnail_src": renderer.thumbnail.thumbnails[renderer.thumbnail.thumbnails.length - 1].url,
         "video_count": renderer.videoCountText ? renderer.videoCountText.runs.reduce(comb, "") : "",
-        "subscriber_count": renderer.subscriberCountText ? renderer.subscriberCountText.simpleText : "0 subscribers"
+        "subscriber_count": renderer.subscriberCountText ? renderer.subscriberCountText.simpleText : "0 subscribers",
+        "verified": renderer.ownerBadges &&
+                    renderer.ownerBadges.some(badge => badge.metadataBadgeRenderer.style.indexOf("VERIFIED") > -1) || 
+                    false
     };
 
     return { channel };
@@ -143,7 +153,7 @@ function parseRadioRenderer(renderer) {
     };
 
     let uploader = {
-        "username": renderer.shortBylineText.simpleText
+        "username": renderer.shortBylineText ? renderer.shortBylineText.simpleText : "YouTube"
     };
 
     return { radio: radio, uploader: uploader };
@@ -159,15 +169,15 @@ function parseVideoRenderer(renderer) {
         "id": renderer.videoId,
         "title": renderer.title.runs.reduce(comb, ""),
         "url": `https://www.youtube.com${renderer.navigationEndpoint.commandMetadata.webCommandMetadata.url}`,
-        "duration": renderer.lengthText ? renderer.lengthText.simpleText :
-                    renderer.viewCountText ? renderer.viewCountText.runs.reduce(comb, "") :
-                    "Unknown",
+        "duration": renderer.lengthText ? renderer.lengthText.simpleText : "Live",
         "snippet": renderer.descriptionSnippet ?
                    renderer.descriptionSnippet.runs.reduce((a, b) => a + (b.bold ? `<b>${b.text}</b>` : b.text), ""):
                    "",
         "upload_date": renderer.publishedTimeText ? renderer.publishedTimeText.simpleText : "Live",
         "thumbnail_src": renderer.thumbnail.thumbnails[renderer.thumbnail.thumbnails.length - 1].url,
-        "views": renderer.viewCountText.simpleText || renderer.viewCountText.runs.reduce(comb, "")
+        "views": renderer.viewCountText ?
+            renderer.viewCountText.simpleText || renderer.viewCountText.runs.reduce(comb, "") :
+            (renderer.publishedTimeText ? "0 views" : "0 watching")
     };
 
     let uploader = {
@@ -175,7 +185,7 @@ function parseVideoRenderer(renderer) {
         "url": `https://www.youtube.com${renderer.ownerText.runs[0].navigationEndpoint.commandMetadata.webCommandMetadata.url}`
     };
     uploader.verified = renderer.ownerBadges &&
-        renderer.ownerBadges.some(badge => badge.metadataBadgeRenderer.tooltip === "Verified") || 
+        renderer.ownerBadges.some(badge => badge.metadataBadgeRenderer.style.indexOf("VERIFIED") > -1) || 
         false;
 
     return { video: video, uploader: uploader };
