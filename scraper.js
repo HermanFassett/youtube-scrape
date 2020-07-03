@@ -25,8 +25,9 @@ async function youtube(query, page) {
 
                     // Get script json data from html to parse
                     let data = html.substring(html.indexOf("ytInitialData") + 17);
-                    data = data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6);
-                    let sectionLists = JSON.parse(data).contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
+                    data = JSON.parse(data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6));
+                    json["estimatedResults"] = data.estimatedResults || "0";
+                    let sectionLists = data.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
 
                     // Loop through all objects and parse data according to type
                     sectionLists.forEach(sectionList => {
