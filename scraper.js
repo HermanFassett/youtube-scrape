@@ -24,33 +24,46 @@ async function youtube(query, page) {
                     json["parser"] = "json_format";
 
                     // Get script json data from html to parse
-                    let data = html.substring(html.indexOf("ytInitialData") + 17);
-                    data = JSON.parse(data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6));
-                    json["estimatedResults"] = data.estimatedResults || "0";
-                    let sectionLists = data.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
+                    let data, sectionLists;
+                    try {
+                        data = html.substring(html.indexOf("ytInitialData") + 17);
+                        data = JSON.parse(data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6));
+                        json["estimatedResults"] = data.estimatedResults || "0";
+                        sectionLists = data.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
+                    }
+                    catch(ex) {
+                        console.error("Failed to parse data:", ex);
+                        console.log(data);
+                    }
 
                     // Loop through all objects and parse data according to type
                     sectionLists.forEach(sectionList => {
-                        sectionList.itemSectionRenderer.contents.forEach(content => {
-                            try {
-                                if (content.hasOwnProperty("channelRenderer")) {
-                                    json.results.push(parseChannelRenderer(content.channelRenderer));
+                        try {
+                            sectionList.itemSectionRenderer.contents.forEach(content => {
+                                try {
+                                    if (content.hasOwnProperty("channelRenderer")) {
+                                        json.results.push(parseChannelRenderer(content.channelRenderer));
+                                    }
+                                    if (content.hasOwnProperty("videoRenderer")) {
+                                        json.results.push(parseVideoRenderer(content.videoRenderer));
+                                    }
+                                    if (content.hasOwnProperty("radioRenderer")) {
+                                        json.results.push(parseRadioRenderer(content.radioRenderer));
+                                    }
+                                    if (content.hasOwnProperty("playlistRenderer")) {
+                                        json.results.push(parsePlaylistRenderer(content.playlistRenderer));
+                                    }
                                 }
-                                if (content.hasOwnProperty("videoRenderer")) {
-                                    json.results.push(parseVideoRenderer(content.videoRenderer));
+                                catch(ex) {
+                                    console.error("Failed to parse renderer:", ex);
+                                    console.log(content);
                                 }
-                                if (content.hasOwnProperty("radioRenderer")) {
-                                    json.results.push(parseRadioRenderer(content.radioRenderer));
-                                }
-                                if (content.hasOwnProperty("playlistRenderer")) {
-                                    json.results.push(parsePlaylistRenderer(content.playlistRenderer));
-                                }
-                            }
-                            catch(ex) {
-                                console.log(ex);
-                                console.log(content);
-                            }
-                        });
+                            });
+                        }
+                        catch (ex) {
+                            console.error("Failed to read contents for section list:", ex);
+                            console.log(sectionList);
+                        }
                     });
                 }
     
