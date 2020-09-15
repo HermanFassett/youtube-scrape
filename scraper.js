@@ -37,7 +37,7 @@ async function youtube(query, page) {
                     }
 
                     // Loop through all objects and parse data according to type
-                    sectionLists.forEach(sectionList => {
+                    sectionLists.filter(x => x.hasOwnProperty("itemSectionRenderer")).forEach(sectionList => {
                         try {
                             sectionList.itemSectionRenderer.contents.forEach(content => {
                                 try {
