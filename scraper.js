@@ -40,24 +40,7 @@ async function youtube(query, page) {
                     sectionLists.filter(x => x.hasOwnProperty("itemSectionRenderer")).forEach(sectionList => {
                         try {
                             sectionList.itemSectionRenderer.contents.forEach(content => {
-                                try {
-                                    if (content.hasOwnProperty("channelRenderer")) {
-                                        json.results.push(parseChannelRenderer(content.channelRenderer));
-                                    }
-                                    if (content.hasOwnProperty("videoRenderer")) {
-                                        json.results.push(parseVideoRenderer(content.videoRenderer));
-                                    }
-                                    if (content.hasOwnProperty("radioRenderer")) {
-                                        json.results.push(parseRadioRenderer(content.radioRenderer));
-                                    }
-                                    if (content.hasOwnProperty("playlistRenderer")) {
-                                        json.results.push(parsePlaylistRenderer(content.playlistRenderer));
-                                    }
-                                }
-                                catch(ex) {
-                                    console.error("Failed to parse renderer:", ex);
-                                    console.log(content);
-                                }
+                                json.results = json.results.concat(...parseFormats(content));
                             });
                         }
                         catch (ex) {
@@ -74,6 +57,34 @@ async function youtube(query, page) {
     });
 }
 
+/**
+ * Parse renderer for child renderer formats
+ * @param {object} content - The renderer contents to parse
+ */
+function parseFormats(content) {
+    try {
+        if (content.hasOwnProperty("channelRenderer")) {
+            return [parseChannelRenderer(content.channelRenderer)];
+        }
+        if (content.hasOwnProperty("shelfRenderer")) {
+            return [parseShelfRenderer(content.shelfRenderer)];
+        }
+        if (content.hasOwnProperty("videoRenderer")) {
+            return [parseVideoRenderer(content.videoRenderer)];
+        }
+        if (content.hasOwnProperty("radioRenderer")) {
+            return [parseRadioRenderer(content.radioRenderer)];
+        }
+        if (content.hasOwnProperty("playlistRenderer")) {
+            return [parsePlaylistRenderer(content.playlistRenderer)];
+        }
+    }
+    catch(ex) {
+        console.error("Failed to parse renderer:", ex);
+        console.log(content);
+    }
+    return [];
+}
 /**
  * Parse youtube search results from dom elements
  * @param {CheerioStatic} $ - The youtube search results loaded with cheerio
@@ -127,6 +138,19 @@ function parseChannelRenderer(renderer) {
     };
 
     return { channel };
+}
+
+/**
+ * Parse a shelfRenderer object from youtube search results (Latest Videos, Popular Videos)
+ * @param {object} renderer - The shelf renderer
+ * @returns arr with results to return for this shelf
+ */
+function parseShelfRenderer(renderer) {
+    var results = [];
+    renderer.content.verticalListRenderer.items.forEach(item => {
+        results = results.concat(...parseFormats(item));
+    });
+    return results;
 }
 
 /**
