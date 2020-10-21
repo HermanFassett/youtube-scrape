@@ -40,8 +40,7 @@ async function youtube(query, page) {
                     }
                     catch(ex) {
                         console.error("Failed to parse data:", ex);
-                        require('fs').writeFileSync("index4.html", html);
-                        //console.log(data);
+                        console.log(data);
                     }
 
                     // Loop through all objects and parse data according to type
