@@ -26,14 +26,22 @@ async function youtube(query, page) {
                     // Get script json data from html to parse
                     let data, sectionLists = [];
                     try {
-                        data = html.substring(html.indexOf("ytInitialData") + 17);
-                        data = JSON.parse(data.substring(0, data.indexOf('window["ytInitialPlayerResponse"]') - 6));
+                        let match = html.match(/ytInitialData"[^{]*(.*);\s*window\["ytInitialPlayerResponse"\]/s);
+                        if (match && match.length > 1) {
+                            json["parser"] += ".original";
+                        }
+                        else {
+                            json["parser"] += ".scraper_data";
+                            match = html.match(/ytInitialData[^{]*(.*);\s*\/\/ scraper_data_end/s);
+                        }
+                        data = JSON.parse(match[1]);
                         json["estimatedResults"] = data.estimatedResults || "0";
                         sectionLists = data.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
                     }
                     catch(ex) {
                         console.error("Failed to parse data:", ex);
-                        console.log(data);
+                        require('fs').writeFileSync("index4.html", html);
+                        //console.log(data);
                     }
 
                     // Loop through all objects and parse data according to type
