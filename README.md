@@ -1,5 +1,6 @@
 # YouTube Scrape
 A YouTube search scraping API
+
 ## Get search results
 The base url to get search results, is as follows:<br>
 ```
@@ -371,7 +372,16 @@ Example output:
 	"parser": "json_format"
 }
 ```
-Deploy To Heroku
+## Run with docker
+
+To run this project with docker, go to project root directory and run following commands.
+
+```
+docker build -t <your username>/youtube-scrape .
+docker run -p 8080:8080 -d <your username>/youtube-scrape
+```
+
+## Deploy to Heroku
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
