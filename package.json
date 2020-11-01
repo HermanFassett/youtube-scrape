@@ -6,7 +6,6 @@
     "author": "Herman Fassett",
     "dependencies": {
         "express": "latest",
-        "request": "latest",
-        "cheerio": "latest"
+        "request": "latest"
     }
 }
