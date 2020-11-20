@@ -1,4 +1,3 @@
-const cheerio = require('cheerio');
 const request = require('request');
 
 async function youtube(query, key, pageToken) {
@@ -38,42 +37,31 @@ async function youtube(query, key, pageToken) {
             request(url, (error, response, html) => {
                 // Check for errors
                 if (!error && response.statusCode === 200) {
-                    const $ = cheerio.load(html);
+                    json["parser"] = "json_format";
+                    json["key"] = html.match(/"innertubeApiKey":"([^"]*)/)[1];
 
-                    // First attempt to parse old youtube search result style
-                    $(".yt-lockup-dismissable").each((index, vid) => {
-                        json["parser"] = "html_format";
-                        json.results.push(parseOldFormat($, vid));
-                    });
-
-                    // If that fails, we have to parse new format from json data in html script tag
-                    if (!json.results.length) {
-                        json["parser"] = "json_format";
-                        json["key"] = html.match(/"innertubeApiKey":"([^"]*)/)[1];
-
-                        // Get script json data from html to parse
-                        let data, sectionLists = [];
-                        try {
-                            let match = html.match(/ytInitialData"[^{]*(.*);\s*window\["ytInitialPlayerResponse"\]/s);
-                            if (match && match.length > 1) {
-                                json["parser"] += ".original";
-                            }
-                            else {
-                                json["parser"] += ".scraper_data";
-                                match = html.match(/ytInitialData[^{]*(.*);\s*\/\/ scraper_data_end/s);
-                            }
-                            data = JSON.parse(match[1]);
-                            json["estimatedResults"] = data.estimatedResults || "0";
-                            sectionLists = data.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
+                    // Get script json data from html to parse
+                    let data, sectionLists = [];
+                    try {
+                        let match = html.match(/ytInitialData[^{]*(.*);\s*\/\/ scraper_data_end/s);
+                        if (match && match.length > 1) {
+                            json["parser"] += ".scraper_data";
                         }
-                        catch(ex) {
-                            console.error("Failed to parse data:", ex);
-                            console.log(data);
+                        else {
+                            json["parser"] += ".original";
+                            match = html.match(/ytInitialData"[^{]*(.*);\s*window\["ytInitialPlayerResponse"\]/s);
                         }
-
-                        // Loop through all objects and parse data according to type
-                        parseJsonFormat(sectionLists, json);
+                        data = JSON.parse(match[1]);
+                        json["estimatedResults"] = data.estimatedResults || "0";
+                        sectionLists = data.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents;
                     }
+                    catch(ex) {
+                        console.error("Failed to parse data:", ex);
+                        console.log(data);
+                    }
+
+                    // Loop through all objects and parse data according to type
+                    parseJsonFormat(sectionLists, json);
         
                     return resolve(json);
                 }
@@ -82,39 +70,6 @@ async function youtube(query, key, pageToken) {
         }
     });
 };
-
-/**
- * Parse youtube search results from dom elements
- * @param {CheerioStatic} $ - The youtube search results loaded with cheerio
- * @param {CheerioElement} vid - The current video being parsed
- * @returns object with data to return for this video
- */
-function parseOldFormat($, vid) {
-    // Get video details
-    let $metainfo = $(vid).find(".yt-lockup-meta-info li");
-    let $thumbnail = $(vid).find(".yt-thumb img");
-    let video = {
-        "id": $(vid).parent().data("context-item-id"),
-        "title": $(vid).find(".yt-lockup-title").children().first().text(),
-        "url": `https://www.youtube.com${$(vid).find(".yt-lockup-title").children().first().attr("href")}`,
-        "duration": $(vid).find(".video-time").text().trim() || "Playlist",
-        "snippet": $(vid).find(".yt-lockup-description").text(),
-        "upload_date": $metainfo.first().text(),
-        "thumbnail_src": $thumbnail.data("thumb") || $thumbnail.attr("src"),
-        "views": $metainfo.last().text()
-    };
-
-    // Get user details
-    let $byline = $(vid).find(".yt-lockup-byline");
-    let uploader = {
-        "username": $byline.text(),
-        "url": `https://www.youtube.com${$byline.find("a").attr("href")}`,
-        "verified": !!$byline.find("[title=Verified]").length
-    };
-
-    // Return json
-    return { video: video, uploader: uploader };
-}
 
 /**
  * Parse youtube search results from json sectionList array and add to json result object
