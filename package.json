@@ -1,12 +1,11 @@
 {
     "name": "youtube-scrape",
-    "version": "0.1.2",
+    "version": "0.1.4",
     "description": "Scrape YouTube searches",
     "main": "server.js",
     "author": "Herman Fassett",
     "dependencies": {
         "express": "latest",
-        "request": "latest",
-        "cheerio": "latest"
+        "request": "latest"
     }
 }
