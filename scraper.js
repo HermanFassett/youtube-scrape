@@ -41,9 +41,9 @@ async function youtube(query, key, pageToken) {
                     // Get script json data from html to parse
                     let data, sectionLists = [];
                     try {
-                        let match = html.match(/ytInitialData[^{]*(.*);\s*\/\/ scraper_data_end/s);
+                        let match = html.match(/ytInitialData[^{]*(.*"adSafetyReason":[^;]*});/s);
                         if (match && match.length > 1) {
-                            json["parser"] += ".scraper_data";
+                            json["parser"] += ".object_var";
                         }
                         else {
                             json["parser"] += ".original";
