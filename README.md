@@ -50,7 +50,7 @@ docker run -p 8080:8080 -d <your username>/youtube-scrape
 
 Here is an example call:
 ```
-http://youtube-scrape.herokuapp.com/api/search?q=herman%20fassett&page=1
+http://youtube-scrape.herokuapp.com/api/search?q=herman%20fassett
 ```
 Example output:
 ```
