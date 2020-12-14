@@ -1,6 +1,80 @@
 const request = require('request');
+const URL = require('url');
 
-async function youtube(query, key, pageToken) {
+async function getFilters(query) {
+    return new Promise((resolve, reject) => {
+        let url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&hl=en`;
+        request(url, (error, response, html) => {
+            if (!error && response.statusCode === 200) {
+                // Get script json data from html to parse
+                try {
+                    let match = html.match(/ytInitialData[^{]*(.*"adSafetyReason":[^;]*});/s);
+                    if (!match) {
+                        match = html.match(/ytInitialData"[^{]*(.*);\s*window\["ytInitialPlayerResponse"\]/s);
+                    }
+                    let json = JSON.parse(match[1]);
+
+                    // The following adapted from:
+                    // https://github.com/TimeForANinja/node-ytsr/blob/wip-api-adjustments/lib/utils.js
+                    const BASE_URL = 'https://www.youtube.com/';
+                    const wrapper = json.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer;
+                    const filterWrapper = wrapper.subMenu.searchSubMenuRenderer.groups;
+                    const parsedGroups = new Map();
+                    for (const filterGroup of filterWrapper) {
+                        // TODO: switch to Map when done caring about compatibility
+                        const singleFilterGroup = [];
+                        singleFilterGroup.active = null;
+                        for (const filter of filterGroup.searchFilterGroupRenderer.filters) {
+                        const isSet = !filter.searchFilterRenderer.navigationEndpoint;
+                        let targetURL = null;
+                        if (!isSet) targetURL = filter.searchFilterRenderer.navigationEndpoint.commandMetadata.webCommandMetadata.url;
+                        const parsedFilter = {
+                            description: filter.searchFilterRenderer.tooltip,
+                            label: parseText(filter.searchFilterRenderer.label),
+                            query: isSet ? null : URL.resolve(BASE_URL, targetURL),
+                            isSet: isSet,
+                            // TODO: remove when done caring about compatibility
+                            active: isSet,
+                            name: parseText(filter.searchFilterRenderer.label),
+                            ref: isSet ? null : URL.resolve(BASE_URL, targetURL),
+                        };
+                        if (isSet) singleFilterGroup.active = parsedFilter;
+                        singleFilterGroup.push(parsedFilter);
+                        }
+                        parsedGroups.set(parseText(filterGroup.searchFilterGroupRenderer.title), singleFilterGroup);
+                    }
+                    resolve(parsedGroups);
+                }
+                catch(ex) {
+                    console.error("Failed to parse data:", ex);
+                }
+            }
+        });
+    })
+}
+function parseText(txt) {
+    return txt.simpleText || txt.runs.map(a => a.text).join('');
+} 
+
+async function youtube(params, key, pageToken) {
+    let query, type, hl, gl;
+    if (typeof params === 'string') {
+        query = params;
+    }
+    else {
+        query = params.query;
+        type = params.type;
+        hl = params.hl;
+        gl = params.gl;
+    }
+    let filterUrl = null;
+    if (type && !key && !pageToken) {
+        let filters = await getFilters(query);
+        let typeFilter = filters.get('Type').find( filter => filter.name.toLowerCase() === type.toLowerCase() );
+        if (typeFilter && typeFilter.query) {
+            filterUrl = typeFilter.query;
+        }
+    }
     return new Promise((resolve, reject) => {
         let json = { results: [], version: require('./package.json').version };
 
@@ -10,13 +84,16 @@ async function youtube(query, key, pageToken) {
             json["key"] = key;
             
             // Access YouTube search API
+            let clientParams = {
+                clientName: "WEB",
+                clientVersion: "2.20201022.01.01",
+            };
+            if (hl) clientParams.hl = hl;
+            if (gl) clientParams.gl = gl;
             request.post(`https://www.youtube.com/youtubei/v1/search?key=${key}`, {
                 json: {
                     context: {
-                        client: {
-                            clientName: "WEB",
-                            clientVersion: "2.20201022.01.01",
-                        },
+                        client: clientParams,
                     },
                     continuation: pageToken
                 },
@@ -29,7 +106,13 @@ async function youtube(query, key, pageToken) {
             });
         }
         else {
-            let url = `https://www.youtube.com/results?q=${encodeURIComponent(query)}`;
+            let url = filterUrl ? filterUrl : `https://www.youtube.com/results?q=${encodeURIComponent(query)}`;
+            if (hl) {
+                url += `&hl=${encodeURIComponent(hl)}`;
+            }
+            if (gl) {
+                url += `&gl=${encodeURIComponent(gl)}`;
+            }
 
             // Access YouTube search
             request(url, (error, response, html) => {
