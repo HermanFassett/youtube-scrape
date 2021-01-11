@@ -1,12 +1,17 @@
 # YouTube Scrape
+
 A YouTube search scraping API
 
 ## Get search results
+
 The base url to get search results, is as follows:<br>
+
 ```
 http://youtube-scrape.herokuapp.com/api/search
 ```
+
 The url query options are as follows:
+
 <table>
   <thead>
     	<tr>
@@ -47,12 +52,14 @@ docker run -p 8080:8080 -d <your username>/youtube-scrape
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-
 Here is an example call:
+
 ```
 http://youtube-scrape.herokuapp.com/api/search?q=herman%20fassett
 ```
+
 Example output:
+
 ```
 {
 	"results": [{
