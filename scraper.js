@@ -1,6 +1,6 @@
 const request = require("request");
 
-async function youtube(query, key, pageToken) {
+async function youtube(query, key, pageToken, languageCode) {
   return new Promise((resolve, reject) => {
     let json = { results: [], version: require("./package.json").version };
 
@@ -39,9 +39,14 @@ async function youtube(query, key, pageToken) {
       let url = `https://www.youtube.com/results?q=${encodeURIComponent(
         query
       )}`;
-
+      var options = {
+        url: url,
+        headers: {
+          "Accept-Language": languageCode ?? "en-US",
+        },
+      };
       // Access YouTube search
-      request(url, (error, response, html) => {
+      request(options, (error, response, html) => {
         // Check for errors
         if (!error && response.statusCode === 200) {
           json["parser"] = "json_format";

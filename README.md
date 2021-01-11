@@ -36,6 +36,11 @@ The url query options are as follows:
 		<td>String</td>
 		<td>(Optional) Search key. Required if using pageToken. Returned by initial call</td>
 		</tr>
+		<tr>
+		<td>language</td>
+		<td>String</td>
+		<td>(Optional) Language of results. Default is `en-US` for English. e.g. `ar-SA` for Arabic or `es-ES` for Spanish</td>
+		</tr>
   </tbody>
 </table>
 
