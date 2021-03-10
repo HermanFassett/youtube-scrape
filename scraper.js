@@ -8,7 +8,7 @@ async function getFilters(query) {
             if (!error && response.statusCode === 200) {
                 // Get script json data from html to parse
                 try {
-                    let match = html.match(/ytInitialData[^{]*(.*"adSafetyReason":[^;]*});/s);
+                    let match = html.match(/ytInitialData[^{]*(.*?);\s*<\/script>/s);
                     if (!match) {
                         match = html.match(/ytInitialData"[^{]*(.*);\s*window\["ytInitialPlayerResponse"\]/s);
                     }
