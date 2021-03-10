@@ -21,7 +21,21 @@ The url query options are as follows:
         <td>String</td>
         <td>YouTube search query</td>
     	</tr>
-    	<tr>
+		<tr>
+        <td>type</td>
+        <td>String</td>
+        <td>(Optional) Item type (channel, playlist, video)</td>
+    	</tr>
+		<tr>
+        <td>hl</td>
+        <td>String</td>
+        <td>(Optional) Language (e.g. en)</td>
+    	</tr>
+		<tr>
+        <td>gl</td>
+        <td>String</td>
+        <td>(Optional) Region (e.g. US)</td>
+    	</tr>
         <td>pageToken</td>
         <td>String</td>
         <td>(Optional) The token for page of YouTube search results. Returned by initial call</td>

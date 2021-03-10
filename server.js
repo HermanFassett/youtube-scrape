@@ -9,7 +9,13 @@ app.get('/', (req, res) => {
 
 //API route
 app.get('/api/search', (req, res) => {
-    scraper.youtube(req.query.q, req.query.key, req.query.pageToken)
+    const params = {
+      query: req.query.q,
+      type: req.query.type,
+      hl: req.query.hl,
+      gl: req.query.gl
+    }
+    scraper.youtube(params, req.query.key, req.query.pageToken)
         .then(x => res.json(x))
         .catch(e => res.send(e));
 });
