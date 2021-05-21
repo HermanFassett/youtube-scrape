@@ -36,11 +36,11 @@ async function youtube(query, key, pageToken) {
                 // Check for errors
                 if (!error && response.statusCode === 200) {
                     json["parser"] = "json_format";
-                    json["key"] = html.match(/"innertubeApiKey":"([^"]*)/)[1];
 
                     // Get script json data from html to parse
                     let data, sectionLists = [];
                     try {
+                        json["key"] = html.match(/"innertubeApiKey":"([^"]*)/)[1];
                         let match = html.match(/ytInitialData[^{]*(.*?);\s*<\/script>/s);
                         if (match && match.length > 1) {
                             json["parser"] += ".object_var";
